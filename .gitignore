@@ -1,0 +1,5 @@
+.env
+.env.development
+projectsprint.key
+fit_byte
+fit_byte.gz
