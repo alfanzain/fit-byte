@@ -2,11 +2,11 @@ package utils
 
 import (
 	"errors"
+	"mime/multipart"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -52,14 +52,14 @@ func ValidateJWT(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-func IsImageURI(fl validator.FieldLevel) bool {
-	uri := fl.Field().String()
-	// Check if the URI ends with common image file extensions
-	allowedExtensions := []string{".jpg", ".jpeg", ".png"}
-	for _, ext := range allowedExtensions {
-		if strings.HasSuffix(strings.ToLower(uri), ext) {
-			return true
-		}
+func ValidateFile(fileHeader *multipart.FileHeader) error {
+	if fileHeader.Size > 100*1024 {
+		return errors.New("file size exceeds 100KiB")
 	}
-	return false
+
+	ext := strings.ToLower(strings.TrimPrefix(fileHeader.Filename[strings.LastIndex(fileHeader.Filename, "."):], "."))
+	if ext != "jpeg" && ext != "jpg" && ext != "png" {
+		return errors.New("invalid file type; only jpeg, jpg, png allowed")
+	}
+	return nil
 }

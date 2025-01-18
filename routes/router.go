@@ -7,18 +7,21 @@ import (
 	"fit-byte/middleware"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
+func SetupRouter(cfg *config.Config, db *sql.DB, s3Client *s3.Client) *gin.Engine {
 	router := gin.Default()
 	jwtMiddleware := middleware.JWTAuth()
 
 	v1Group := router.Group("/api/v1")
 
 	authHandler := v1Handlers.NewAuthHandler(db)
+	fileController := v1Handlers.NewFileController(s3Client)
 	v1Group.POST("/login", authHandler.Login)
 	v1Group.POST("/register", authHandler.Register)
+	v1Group.POST("/file", fileController.UploadFile)
 
 	// userRouter := v1Group.Group("user")
 	// userRouter.Use(jwtMiddleware)
