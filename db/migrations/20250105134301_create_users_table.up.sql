@@ -15,5 +15,5 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Indexes
-CREATE UNIQUE INDEX idx_users_email ON users (email);
-CREATE INDEX idx_users_email_password ON users (email, password);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email);
+CREATE INDEX IF NOT EXISTS idx_users_email_password ON users (email, password);
