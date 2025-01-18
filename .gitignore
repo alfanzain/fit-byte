@@ -3,3 +3,6 @@
 projectsprint.key
 fit_byte
 fit_byte.gz
+docker-compose.yaml
+tmp/
+tmp/*
