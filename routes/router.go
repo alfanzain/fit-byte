@@ -15,10 +15,13 @@ func SetupRouter(cfg *config.Config, db *sql.DB, s3Client *s3.Client) *gin.Engin
 	router := gin.Default()
 	jwtMiddleware := middleware.JWTAuth()
 
-	v1Group := router.Group("/api/v1")
+	v1Group := router.Group("/v1")
 
 	authHandler := v1Handlers.NewAuthHandler(db)
+	activityHandler := v1Handlers.NewActivityHandler(db)
 	fileController := v1Handlers.NewFileController(s3Client)
+	profileController := v1Handlers.NewProfileHandler(db)
+
 	v1Group.POST("/login", authHandler.Login)
 	v1Group.POST("/register", authHandler.Register)
 
@@ -33,12 +36,17 @@ func SetupRouter(cfg *config.Config, db *sql.DB, s3Client *s3.Client) *gin.Engin
 	// fileRouter.Use(jwtMiddleware)
 	// fileRouter.POST("/", FileHandler.UploadFile)
 
-	// activityRouter := v1Group.Group("activity")
-	// activityRouter.Use(jwtMiddleware)
-	// activityRouter.POST("/", ActivityHandler.CreateActivity)
-	// activityRouter.GET("/", ActivityHandler.GetActivities)
-	// activityRouter.PATCH("/:activityId", ActivityHandler.UpdateActivity)
-	// activityRouter.DELETE("/:activityId", ActivityHandler.DeleteActivity)
+	profileRouter := v1Group.Group("user")
+	profileRouter.Use(jwtMiddleware)
+	profileRouter.GET("/", profileController.GetProfile)
+	profileRouter.PATCH("/", profileController.UpdateProfile)
+
+	activityRouter := v1Group.Group("activity")
+	activityRouter.Use(jwtMiddleware)
+	activityRouter.POST("/", activityHandler.CreateActivity)
+	activityRouter.GET("/", activityHandler.GetActivities)
+	activityRouter.PATCH("/:activityId", activityHandler.UpdateActivity)
+	activityRouter.DELETE("/:activityId", activityHandler.DeleteActivity)
 
 	testRouter := v1Group.Group("middleware-test")
 	testRouter.Use(jwtMiddleware)
