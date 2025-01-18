@@ -24,10 +24,21 @@ func JWTAuth() gin.HandlerFunc {
 		}
 
 		if c.Request.Method == http.MethodPost || c.Request.Method == http.MethodPut || c.Request.Method == http.MethodPatch {
-			if c.GetHeader("Content-Type") != "application/json" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Missing content-type"})
-				c.Abort()
-				return
+			contentType := c.GetHeader("Content-Type")
+
+			switch c.FullPath() {
+			case "/api/v1/file":
+				if !strings.HasPrefix(contentType, "multipart/form-data") {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Content-Type must be multipart/form-data for file uploads"})
+					c.Abort()
+					return
+				}
+			default:
+				if contentType != "application/json" {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Missing content-type"})
+					c.Abort()
+					return
+				}
 			}
 		}
 

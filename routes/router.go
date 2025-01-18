@@ -21,7 +21,8 @@ func SetupRouter(cfg *config.Config, db *sql.DB, s3Client *s3.Client) *gin.Engin
 	fileController := v1Handlers.NewFileController(s3Client)
 	v1Group.POST("/login", authHandler.Login)
 	v1Group.POST("/register", authHandler.Register)
-	v1Group.POST("/file", fileController.UploadFile)
+
+	v1Group.POST("/file", jwtMiddleware, fileController.UploadFile)
 
 	// userRouter := v1Group.Group("user")
 	// userRouter.Use(jwtMiddleware)
