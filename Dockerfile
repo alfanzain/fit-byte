@@ -28,9 +28,6 @@ WORKDIR /app
 # Copy the Go binary from the builder stage
 COPY --from=builder /app/fit-byte .
 
-# Copy the .env file
-COPY .env .
-
 # Expose the port your app will run on
 EXPOSE 8080
 
