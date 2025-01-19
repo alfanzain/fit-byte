@@ -46,3 +46,14 @@ func (r *ProfileRepository) UpdateProfile(id uint, preference string, weightUnit
 
 	return nil
 }
+
+func (r *ProfileRepository) UpdateProfileFull(id uint, preference string, weightUnit string, heightUnit string, weight float64, height float64, name string, imageUri string) error {
+	query := "UPDATE users SET preference = COALESCE($1, preference), weight_unit = COALESCE($2, weight_unit), height_unit = COALESCE($3, height_unit), weight = COALESCE($4, weight), height = COALESCE($5, height), name = COALESCE($6, name), image_uri = COALESCE($7, image_uri) WHERE id = $8"
+
+	_, err := db.DB.Exec(query, preference, weightUnit, heightUnit, weight, height, name, imageUri, id)
+	if err != nil {
+		return fmt.Errorf("failed to update profile: %v", err)
+	}
+
+	return nil
+}
