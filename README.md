@@ -1,1 +1,1 @@
-`migrate -path ./db/migrations -database "postgresql://postgres:postgres@localhost:5432/local_fitbyte?sslmode=disable" -verbose up
+`migrate -path ./db/migrations -database "postgresql://postgres:postgres@localhost:5432/local_fitbyte?sslmode=disable" -verbose up`
