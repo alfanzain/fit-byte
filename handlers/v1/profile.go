@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fit-byte/repositories"
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
@@ -71,26 +72,6 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	// if request.ImageUri == "" && request.Name == "" {
-	// 	var userdata models.Profile
-	// 	userdata, _ = h.Repo.GetProfile(userId)
-	// 	err := h.Repo.UpdateProfileFull(userId, request.Preference, request.WeightUnit, request.HeightUnit, request.Weight, request.Height, userdata.Name.String, request.ImageUri)
-	// 	if err != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 		return
-	// 	}
-
-	// }
-
-	// err := h.Repo.UpdateProfileFull(userId, request.Preference, request.WeightUnit, request.HeightUnit, request.Weight, request.Height, request.Name, request.ImageUri)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
-
-	// c.JSON(http.StatusOK, request)
-
-	// Get the current profile data
 	userdata, err := h.Repo.GetProfile(userId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -126,9 +107,20 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	// check if uri validation is failed
-	
+	if request.ImageUri != "" {
+		parsedUri, err := url.ParseRequestURI(request.ImageUri)
+		println(parsedUri.Host)
+		if err != nil || parsedUri.Scheme == "" || parsedUri.Host == "" || parsedUri.Host == "incomplete" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "imageUri is not a valid URI"})
+			return
+		}
+	}
 
-	// if name =="" return 400
+	if request.ImageUri == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "imageUri is required"})
+		return
+	}
+
 	if request.Name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
 		return
