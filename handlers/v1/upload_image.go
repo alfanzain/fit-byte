@@ -8,7 +8,6 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -42,32 +41,32 @@ func InitS3Client() *s3.Client {
 	return s3.NewFromConfig(cfg)
 }
 
-func UploadToS3(s3Client *s3.Client, fileHeader *multipart.FileHeader, bucketName string, resultChan chan<- string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	file, err := fileHeader.Open()
-	if err != nil {
-		resultChan <- ""
-		return
-	}
-	defer file.Close()
-
+func UploadToS3(s3Client *s3.Client, fileHeader *multipart.FileHeader, bucketName string) string {
 	key := fmt.Sprintf("uploads/%d_%s", time.Now().UnixNano(), fileHeader.Filename)
 
-	_, err = s3Client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(bucketName),
-		Key:         aws.String(key),
-		Body:        file,
-		ACL:         types.ObjectCannedACLPublicRead,
-		ContentType: aws.String(fileHeader.Header.Get("Content-Type")),
-	})
-	if err != nil {
-		resultChan <- ""
-		return
-	}
+	go func() {
+		file, err := fileHeader.Open()
+		if err != nil {
+			log.Printf("Failed to open file: %v", err)
+			return
+		}
+		defer file.Close()
 
-	resultChan <- fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucketName, key)
+		params := &s3.PutObjectInput{
+			Bucket:      aws.String(bucketName),
+			Key:         aws.String(key),
+			Body:        file,
+			ACL:         types.ObjectCannedACLPublicRead,
+			ContentType: aws.String(fileHeader.Header.Get("Content-Type")),
+		}
+
+		_, err = s3Client.PutObject(context.Background(), params)
+		if err != nil {
+			log.Printf("Failed to upload file to S3: %v", err)
+		}
+	}()
+
+	return fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucketName, key)
 }
 
 func (fc *FileController) UploadFile(c *gin.Context) {
@@ -82,22 +81,7 @@ func (fc *FileController) UploadFile(c *gin.Context) {
 		return
 	}
 
-	var wg sync.WaitGroup
-	resultChan := make(chan string, 1)
+	uri := UploadToS3(fc.S3Client, file, fc.BucketName)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		UploadToS3(fc.S3Client, file, fc.BucketName, resultChan)
-	}()
-
-	wg.Wait()
-	result := <-resultChan
-
-	if result == "" || len(result) < 5 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Upload failed"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"uri": result})
+	c.JSON(http.StatusOK, gin.H{"uri": uri})
 }
