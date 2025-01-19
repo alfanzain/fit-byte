@@ -15,7 +15,6 @@ type Config struct {
 	DbPass             string
 	DbName             string
 	S3Bucket           string
-	S3Endpoint         string
 	AwsRegion          string
 	AwsAccessKeyId     string
 	AwsSecretAccessKey string
@@ -35,7 +34,6 @@ func LoadConfig() *Config {
 		DbName:  getEnv("DB_NAME", "mydb"),
 
 		S3Bucket:           getEnv("AWS_S3_BUCKET_NAME", ""),
-		S3Endpoint:         getEnv("AWS_S3_ENDPOINT", ""),
 		AwsRegion:          getEnv("AWS_REGION", ""),
 		AwsAccessKeyId:     getEnv("AWS_ACCESS_KEY_ID", ""),
 		AwsSecretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY", ""),
