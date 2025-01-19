@@ -1,0 +1,58 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the `main` branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up SSH for EC2 instances (Same key for all)
+      - name: Set up SSH for EC2 instances
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+
+      # Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t fit-byte .
+
+      # Save Docker image as tar file
+      - name: Save Docker image as tar file
+        run: |
+          docker save -o fit-byte.tar fit-byte
+
+      # Deploy to EC2 instance 1
+      - name: Deploy Docker container to EC2 instance 1
+        run: |
+          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_PRIVATE_KEY }} fit-byte.tar ubuntu@${{ secrets.EC2_PUBLIC_IP_1 }}:/home/ubuntu/
+          ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_PRIVATE_KEY }} ubuntu@${{ secrets.EC2_PUBLIC_IP_1 }} << 'EOF'
+            docker load -i /home/ubuntu/fit-byte.tar
+            docker run -d -p 8080:8080 --name fit-byte fit-byte
+          EOF
+
+      # Deploy to EC2 instance 2
+      - name: Deploy Docker container to EC2 instance 2
+        run: |
+          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_PRIVATE_KEY }} fit-byte.tar ubuntu@${{ secrets.EC2_PUBLIC_IP_2 }}:/home/ubuntu/
+          ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_PRIVATE_KEY }} ubuntu@${{ secrets.EC2_PUBLIC_IP_2 }} << 'EOF'
+            docker load -i /home/ubuntu/fit-byte.tar
+            docker run -d -p 8080:8080 --name fit-byte fit-byte
+          EOF
+
+      # Deploy to EC2 instance 3
+      - name: Deploy Docker container to EC2 instance 3
+        run: |
+          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_PRIVATE_KEY }} fit-byte.tar ubuntu@${{ secrets.EC2_PUBLIC_IP_3 }}:/home/ubuntu/
+          ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_PRIVATE_KEY }} ubuntu@${{ secrets.EC2_PUBLIC_IP_3 }} << 'EOF'
+            docker load -i /home/ubuntu/fit-byte.tar
+            docker run -d -p 8080:8080 --name fit-byte fit-byte
+          EOF
